@@ -1,0 +1,6 @@
+{
+  "name": "Private Chat",
+  "description": "Secure end-to-end encrypted messaging web application with ECDH key exchange and AES-256-GCM encryption.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

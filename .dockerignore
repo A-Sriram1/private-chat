@@ -1,0 +1,12 @@
+node_modules
+dist
+data
+.git
+.agents
+.codex
+npm-debug.log
+dev-server.log
+dev-server.err.log
+server-test.log
+server-test.err.log
+.env

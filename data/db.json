@@ -1,0 +1,16 @@
+{
+  "users": {
+    "sriram": {
+      "username": "Sriram",
+      "publicKey": "{\"crv\":\"P-256\",\"ext\":true,\"key_ops\":[],\"kty\":\"EC\",\"x\":\"1zAnVANJFWXwwTvc3MWOgzKkIEHfAdWGM-Xd3kCglcI\",\"y\":\"ue4MPxObYEvMoAhZ4PJ4ozWXUDxKuzTCxKRC8G8PjX4\"}",
+      "encryptedPrivateKey": "{\"iv\":\"dgL+APG5lb/Xe0c2\",\"ciphertext\":\"iK923E8VfWT8Q/jvRvWbcNCvdZSQ8hmOGSHLE+mX9LmlA97H1LmJEtjb9JHleWmh/9T8pFltRpCCYE8DPr0kbvaWXwt5veU5itG4p9rn3K4KcXgxIcVStngjgHrHZMKe87e27Zv2DzUZWo9/LzpxLxnQSzbaRq+24CsgDC3ApZTfmZJk9OgjsHDESRo+8oeMf6OeYRtRF/uxHGUxyaF/YG+Pk2TwcMhsDhvW6b1aO21+EhHJ8Xfxczp3gmVSm8VE+i+5zSo23NJ0/pn/LCjqk9bnTusliilnMq+ahHysiilbZbTTtfvQlrzmCvqZktEl\"}",
+      "profilePic": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+      "statusMessage": "Hey there! My chats are secure.",
+      "passwordHash": "$2b$10$MK1EzjK2zmhfHf7B1H0UZeqkk9SG4g6J2YKUOyoeTfrkXq1MmjUOS",
+      "salt": "4N+axXQEShowvshrpUr1Mg==",
+      "createdAt": "2026-06-15T09:06:33.379Z"
+    }
+  },
+  "messages": [],
+  "files": {}
+}

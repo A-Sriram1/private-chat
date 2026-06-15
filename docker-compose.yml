@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  private-chat:
+    build: .
+    image: private-chat:latest
+    container_name: private_chat_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - JWT_SECRET=your_super_strong_random_jwt_salt_secret_string
+    volumes:
+      - ./data:/usr/src/app/data
+    restart: unless-stopped
