@@ -72,7 +72,95 @@ export default function App() {
   const localStreamRef = useRef<MediaStream | null>(null);
   const bufferedIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
+  // Stable refs for call state (avoids stale closures in async WS handlers)
+  const callPeerRef = useRef<User | null>(null);
+  callPeerRef.current = callPeer;
+  const callStateRef = useRef<'idle' | 'dialing' | 'incoming' | 'active' | 'ended'>('idle');
+  callStateRef.current = callState;
+
+  // Call timeout: auto-cancel dialing after 45 seconds if no answer
+  const callTimeoutRef = useRef<number | null>(null);
+
+  // Ringtone for incoming calls — stores { ctx, ringInterval } from Web Audio API
+  const ringtoneRef = useRef<{ ctx: AudioContext; ringInterval: ReturnType<typeof setInterval> } | null>(null);
+
   // --- WebRTC Functions ---
+
+  /** Creates a well-configured RTCPeerConnection with STUN + free TURN relay fallback */
+  const createPeerConnection = (): RTCPeerConnection => {
+    return new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        // Free TURN relay from open-relay.metered.ca (works behind symmetric NAT/corporate firewalls)
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ],
+      iceCandidatePoolSize: 10
+    });
+  };
+
+  /** Stop ringtone audio */
+  const stopRingtone = () => {
+    if (ringtoneRef.current) {
+      try {
+        clearInterval(ringtoneRef.current.ringInterval);
+        ringtoneRef.current.ctx.close();
+      } catch (_) {}
+      ringtoneRef.current = null;
+    }
+  };
+
+  /** Play synthesized ringtone using Web Audio API */
+  const playRingtone = () => {
+    try {
+      const ctx = new AudioContext();
+      const playBeep = (startTime: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, startTime);
+        osc.frequency.setValueAtTime(480, startTime + 0.15);
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+        osc.start(startTime);
+        osc.stop(startTime + 0.4);
+      };
+      // Ring pattern: beep-beep ... pause
+      let t = ctx.currentTime;
+      const ringInterval = setInterval(() => {
+        if (callStateRef.current !== 'incoming') {
+          clearInterval(ringInterval);
+          ctx.close();
+          return;
+        }
+        playBeep(ctx.currentTime);
+        setTimeout(() => playBeep(ctx.currentTime + 0.2), 180);
+      }, 2000);
+      // Play first ring immediately
+      playBeep(t);
+      setTimeout(() => playBeep(t + 0.2), 180);
+      // Store stop handle
+      ringtoneRef.current = { ctx, ringInterval };
+    } catch (_) {}
+  };
+
   const initiateCall = async (recipient: User, type: 'audio' | 'video') => {
     try {
       setCallState('dialing');
@@ -85,20 +173,23 @@ export default function App() {
 
       const constraints = {
         audio: true,
-        video: type === 'video' ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
+        video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: { ideal: 'user' } } : false
       };
-      
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
       localStreamRef.current = stream;
 
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      });
+      const pc = createPeerConnection();
       pcRef.current = pc;
+
+      // Set dialing timeout — auto-cancel after 45 seconds
+      if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+      callTimeoutRef.current = window.setTimeout(() => {
+        if (callStateRef.current === 'dialing') {
+          endCall(true);
+        }
+      }, 45000);
 
       stream.getTracks().forEach(track => {
         pc.addTrack(track, stream);
@@ -117,6 +208,12 @@ export default function App() {
       pc.ontrack = (event) => {
         if (event.streams && event.streams[0]) {
           setRemoteStream(event.streams[0]);
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+          console.warn('WebRTC connection state:', pc.connectionState);
         }
       };
 
@@ -139,19 +236,28 @@ export default function App() {
   };
 
   const endCall = (notifyPeer = true) => {
-    if (notifyPeer && callPeer && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    // Use ref to avoid stale closure
+    const peer = callPeerRef.current;
+    if (notifyPeer && peer && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: 'call_end',
-        recipient: callPeer.username
+        recipient: peer.username
       }));
     }
 
+    // Clear dialing timeout
+    if (callTimeoutRef.current) {
+      clearTimeout(callTimeoutRef.current);
+      callTimeoutRef.current = null;
+    }
+
+    // Stop ringtone
+    stopRingtone();
+
+    // Stop media tracks (only use localStreamRef to avoid double-stop)
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
-    }
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
     }
 
     if (pcRef.current) {
@@ -169,26 +275,34 @@ export default function App() {
     setTimeout(() => {
       setCallState('idle');
       setCallPeer(null);
-    }, 1500);
+    }, 1800);
   };
 
   const acceptCall = async () => {
-    if (!callPeer || !pcRef.current) return;
+    const pc = pcRef.current;
+    const peer = callPeerRef.current;
+    if (!peer || !pc) {
+      console.error('acceptCall: missing peer or RTCPeerConnection');
+      rejectCall();
+      return;
+    }
     try {
+      // Clear incoming timeout / ringtone
+      if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null; }
+      stopRingtone();
       setCallState('active');
       setIsMuted(false);
       setIsCameraOff(false);
 
       const constraints = {
         audio: true,
-        video: callMediaType === 'video' ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
+        video: callMediaType === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: { ideal: 'user' } } : false
       };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
       localStreamRef.current = stream;
 
-      const pc = pcRef.current;
       stream.getTracks().forEach(track => {
         pc.addTrack(track, stream);
       });
@@ -199,34 +313,37 @@ export default function App() {
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         socketRef.current.send(JSON.stringify({
           type: 'call_answer',
-          recipient: callPeer.username,
+          recipient: peer.username,
           answer
         }));
       }
 
-      if (bufferedIceCandidatesRef.current.length > 0) {
-        for (const candidate of bufferedIceCandidatesRef.current) {
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (e) {
-            console.error('Failed to add buffered candidate:', e);
-          }
+      // Flush buffered ICE candidates
+      for (const candidate of bufferedIceCandidatesRef.current) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error('Failed to add buffered candidate:', e);
         }
-        bufferedIceCandidatesRef.current = [];
       }
+      bufferedIceCandidatesRef.current = [];
     } catch (err) {
       console.error('Failed to accept secure call:', err);
+      alert('Could not access microphone/camera. Please check your permissions and try again.');
       rejectCall();
     }
   };
 
   const rejectCall = () => {
-    if (callPeer && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+    const peer = callPeerRef.current;
+    if (peer && socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
         type: 'call_reject',
-        recipient: callPeer.username
+        recipient: peer.username
       }));
     }
+    if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null; }
+    stopRingtone();
     endCall(false);
   };
 
@@ -425,6 +542,26 @@ export default function App() {
             break;
           }
 
+          case 'message_reaction': {
+            const { messageId, emoji, sender } = payload;
+            if (!sender) break;
+            setMessages(prev => prev.map(m => {
+              if (m.id !== messageId) return m;
+              const reactions = { ...(m.reactions || {}) };
+              const users = reactions[emoji] ? [...reactions[emoji]] : [];
+              const idx = users.indexOf(sender);
+              if (idx >= 0) {
+                users.splice(idx, 1);
+                if (users.length === 0) delete reactions[emoji];
+                else reactions[emoji] = users;
+              } else {
+                reactions[emoji] = [...users, sender];
+              }
+              return { ...m, reactions };
+            }));
+            break;
+          }
+
           case 'call_invite': {
             const { sender, offer, mediaType } = payload;
             const peerUser = allUsersRef.current.find(u => u.username.toLowerCase() === sender.toLowerCase()) || {
@@ -441,12 +578,7 @@ export default function App() {
             setIsCameraOff(false);
             bufferedIceCandidatesRef.current = [];
 
-            const pc = new RTCPeerConnection({
-              iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-              ]
-            });
+            const pc = createPeerConnection();
             pcRef.current = pc;
 
             pc.onicecandidate = (event) => {
@@ -465,7 +597,24 @@ export default function App() {
               }
             };
 
+            pc.onconnectionstatechange = () => {
+              if (pc.connectionState === 'failed') {
+                console.warn('Incoming call: WebRTC connection failed');
+              }
+            };
+
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+            // Play ringtone
+            playRingtone();
+
+            // Auto-reject after 45 seconds if not answered
+            if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = window.setTimeout(() => {
+              if (callStateRef.current === 'incoming') {
+                rejectCall();
+              }
+            }, 45000);
             break;
           }
 
@@ -473,18 +622,19 @@ export default function App() {
             const { answer } = payload;
             if (pcRef.current) {
               await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+              // Clear dialing timeout — call was answered
+              if (callTimeoutRef.current) { clearTimeout(callTimeoutRef.current); callTimeoutRef.current = null; }
+              stopRingtone();
               setCallState('active');
 
-              if (bufferedIceCandidatesRef.current.length > 0) {
-                for (const candidate of bufferedIceCandidatesRef.current) {
-                  try {
-                    await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-                  } catch (e) {
-                    console.error('Failed to add buffered candidate:', e);
-                  }
+              for (const candidate of bufferedIceCandidatesRef.current) {
+                try {
+                  await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                  console.error('Failed to add buffered candidate:', e);
                 }
-                bufferedIceCandidatesRef.current = [];
               }
+              bufferedIceCandidatesRef.current = [];
             }
             break;
           }
@@ -635,7 +785,11 @@ export default function App() {
       if (updated) {
         // Clear unread count when viewing active chat
         if (updated.unreadCount > 0) {
-          updated.unreadCount = 0;
+          setSessions(prev => prev.map(s =>
+            s.recipient.username.toLowerCase() === activeSession.recipient.username.toLowerCase()
+              ? { ...s, unreadCount: 0 }
+              : s
+          ));
           if (socket) {
             socket.send(JSON.stringify({
               type: 'read_receipt',
@@ -703,14 +857,13 @@ export default function App() {
 
   // --- WEBSOCKET MESSAGING API BROADCASTERS ---
 
-  const handleSendMessage = async (text: string, disappearingDuration?: number) => {
+  const handleSendMessage = async (text: string, disappearingDuration?: number, replyToId?: string) => {
     if (!socket || !activeSession || !currentUser) return;
 
     try {
       const sharedKey = await getSymmetricSharedKey(activeSession.recipient);
       if (!sharedKey) return;
 
-      // Encrypt text symmetrically via AES-256-GCM on the client
       const encryptedPayload = await import('./utils/crypto').then(m => 
         m.encryptText(text, sharedKey)
       );
@@ -721,13 +874,13 @@ export default function App() {
           id: Math.random().toString(36).substring(2, 9),
           recipient: activeSession.recipient.username,
           encryptedContent: JSON.stringify(encryptedPayload),
-          disappearingDuration
+          disappearingDuration,
+          replyToId
         }
       };
 
       socket.send(JSON.stringify(messagePacket));
 
-      // Append optimistically to show on screen instantly
       const optimisticMsg: Message = {
         id: messagePacket.message.id,
         sender: currentUser.username,
@@ -735,7 +888,8 @@ export default function App() {
         encryptedContent: messagePacket.message.encryptedContent,
         timestamp: new Date().toISOString(),
         readStatus: 'sent',
-        disappearingDuration
+        disappearingDuration,
+        replyToId
       };
 
       setMessages(prev => [...prev, optimisticMsg]);
@@ -795,6 +949,34 @@ export default function App() {
 
     // Local filter
     setMessages(prev => prev.filter(m => m.id !== msgId));
+  };
+
+  const handleReactToMessage = (msgId: string, emoji: string) => {
+    if (!currentUser) return;
+    // Optimistic local update
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msgId) return m;
+      const reactions = { ...(m.reactions || {}) };
+      const users = reactions[emoji] ? [...reactions[emoji]] : [];
+      const idx = users.indexOf(currentUser.username);
+      if (idx >= 0) {
+        users.splice(idx, 1);
+        if (users.length === 0) delete reactions[emoji];
+        else reactions[emoji] = users;
+      } else {
+        reactions[emoji] = [...users, currentUser.username];
+      }
+      return { ...m, reactions };
+    }));
+    // Broadcast to peer via WS
+    if (socket && activeSession) {
+      socket.send(JSON.stringify({
+        type: 'message_reaction',
+        messageId: msgId,
+        emoji,
+        recipient: activeSession.recipient.username
+      }));
+    }
   };
 
   const handleSendTypingSignal = (isTyping: boolean) => {
@@ -877,6 +1059,7 @@ export default function App() {
                   onSendMessage={handleSendMessage}
                   onSendFile={handleSendFile}
                   onDeleteMessage={handleDeleteMessage}
+                  onReactToMessage={handleReactToMessage}
                   onSendTypingSignal={handleSendTypingSignal}
                   onOpenSafetyNumber={() => setIsSafetyOpen(true)}
                   onBackToSidebar={() => setShowMobileSidebar(true)}

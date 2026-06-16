@@ -107,7 +107,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
                 {/* Users Comparison side by side */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-3 p-3 bg-[#202C33] border border-white/5 rounded-xl">
-                    <img src={currentUser.profilePic} className="w-8 h-8 rounded-full object-cover shrink-0" alt="Self" referrerPolicy="no-referrer" />
+                    <img src={currentUser.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} className="w-8 h-8 rounded-full object-cover shrink-0" alt="Self" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
                       <h4 className="text-xs font-semibold text-slate-300 truncate">Your Public Key</h4>
                       <p className="text-[9px] text-slate-500 font-mono truncate max-w-[130px]">{currentUser.publicKey}</p>
@@ -115,7 +115,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
                   </div>
 
                   <div className="flex items-center gap-3 p-3 bg-[#202C33] border border-white/5 rounded-xl">
-                    <img src={recipient.profilePic} className="w-8 h-8 rounded-full object-cover shrink-0" alt="Peer" referrerPolicy="no-referrer" />
+                    <img src={recipient.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} className="w-8 h-8 rounded-full object-cover shrink-0" alt="Peer" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
                       <h4 className="text-xs font-semibold text-slate-300 truncate">{recipient.username}'s Key</h4>
                       <p className="text-[9px] text-slate-500 font-mono truncate max-w-[130px]">{recipient.publicKey}</p>

@@ -29,6 +29,8 @@ export interface Message {
   disappearingDuration?: number; // duration in seconds, 0 or undefined = permanent
   expiresAt?: string; // UTC ISO string if disappearing
   isSystem?: boolean;
+  replyToId?: string; // ID of the message being replied to
+  reactions?: Record<string, string[]>; // emoji -> array of usernames who reacted
   
   // File details if it represents an attached asset
   fileId?: string;

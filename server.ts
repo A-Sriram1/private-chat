@@ -372,6 +372,7 @@ async function startServer() {
               timestamp: new Date().toISOString(),
               readStatus: 'sent',
               disappearingDuration: message.disappearingDuration,
+              replyToId: message.replyToId,
               
               fileId: message.fileId,
               fileName: message.fileName,
@@ -443,6 +444,20 @@ async function startServer() {
                 sendToUser(recipient, updateSignal);
               }
             }
+            break;
+          }
+
+          case 'message_reaction': {
+            if (!ws.isAuthenticated || !ws.username) return;
+            const { messageId, emoji, recipient: reactionRecipient } = payload;
+            if (!messageId || !emoji || !reactionRecipient) return;
+            // Forward reaction to recipient so their UI updates
+            sendToUser(reactionRecipient, {
+              type: 'message_reaction',
+              messageId,
+              emoji,
+              sender: ws.username
+            });
             break;
           }
 
