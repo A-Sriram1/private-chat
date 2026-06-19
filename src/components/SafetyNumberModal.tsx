@@ -58,12 +58,12 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
   return (
     <AnimatePresence>
       {isOpen && (
-        <div id="safety_number_modal_overlay" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div id="safety_number_modal_overlay" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 safe-x">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-lg bg-[#111B21] border border-white/5 rounded-2xl shadow-2xl p-6 relative font-sans"
+            className="w-full max-w-lg bg-[#111B21] border border-white/5 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6 relative font-sans max-h-[90dvh] overflow-y-auto safe-bottom"
           >
             {/* Close */}
             <button
@@ -95,7 +95,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
                     ECDH-P256
                   </div>
                   
-                  <div className="font-mono text-xl md:text-2xl text-indigo-400 tracking-[0.25rem] font-bold py-2">
+                  <div className="font-mono text-base sm:text-xl md:text-2xl text-indigo-400 tracking-[0.15rem] sm:tracking-[0.25rem] font-bold py-2 break-all">
                     {safetyNumber}
                   </div>
 
@@ -105,7 +105,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
                 </div>
 
                 {/* Users Comparison side by side */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="flex items-center gap-3 p-3 bg-[#202C33] border border-white/5 rounded-xl">
                     <img src={currentUser.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} className="w-8 h-8 rounded-full object-cover shrink-0" alt="Self" referrerPolicy="no-referrer" />
                     <div className="min-w-0">
@@ -124,7 +124,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     onClick={handleCopy}
                     className="flex-1 bg-[#2A3942] hover:bg-[#202C33] text-slate-200 font-semibold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border border-white/5"
@@ -144,7 +144,7 @@ export default function SafetyNumberModal({ isOpen, onClose, currentUser, recipi
 
                   <button
                     onClick={onClose}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                    className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer"
                   >
                     Match Checked
                   </button>

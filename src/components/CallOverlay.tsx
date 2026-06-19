@@ -86,7 +86,7 @@ export default function CallOverlay({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
-      className="fixed inset-0 z-50 flex flex-col font-sans overflow-hidden select-none"
+      className="fixed inset-0 z-50 flex flex-col font-sans overflow-hidden select-none safe-x"
       style={{
         background:
           mediaType === 'video' && status === 'active'
@@ -95,7 +95,7 @@ export default function CallOverlay({
       }}
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+      <div className="flex items-center justify-between px-4 sm:px-5 pt-4 sm:pt-5 pb-3 shrink-0 safe-top">
         <div className="flex items-center gap-2 text-emerald-400/80 text-xs font-semibold tracking-widest uppercase">
           <Lock className="w-3.5 h-3.5" />
           <span>End-to-End Encrypted</span>
@@ -112,13 +112,13 @@ export default function CallOverlay({
         {(status === 'dialing' || status === 'incoming') && (
           <div className="flex flex-col items-center text-center gap-6">
             <div className="relative flex items-center justify-center">
-              <span className="absolute w-44 h-44 rounded-full bg-emerald-500/10 animate-ping" />
-              <span className="absolute w-36 h-36 rounded-full bg-emerald-500/15 animate-pulse" />
+              <span className="absolute w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-emerald-500/10 animate-ping" />
+              <span className="absolute w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-emerald-500/15 animate-pulse" />
               <img src={AVATAR} alt={peer.username} referrerPolicy="no-referrer"
-                className="w-28 h-28 rounded-full object-cover border-4 border-emerald-500/60 shadow-2xl relative z-10" />
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-emerald-500/60 shadow-2xl relative z-10" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold text-white tracking-tight">{peer.username}</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{peer.username}</h2>
               <p className="text-sm text-emerald-400 font-medium mt-2 animate-pulse">
                 {status === 'dialing'
                   ? `${mediaType === 'video' ? 'Video' : 'Voice'} calling...`
@@ -144,7 +144,7 @@ export default function CallOverlay({
                 )}
             </div>
             {/* Local PIP */}
-            <div className="absolute top-4 right-4 w-32 h-44 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-black z-20">
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-24 h-32 sm:w-32 sm:h-44 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl bg-black z-20">
               {isCameraOff
                 ? <div className="w-full h-full bg-[#202C33] flex flex-col items-center justify-center gap-1">
                     <VideoOff className="w-5 h-5 text-slate-400" />
@@ -197,11 +197,11 @@ export default function CallOverlay({
       </div>
 
       {/* Controls footer */}
-      <div className="shrink-0 flex flex-col items-center gap-4 pb-14 pt-4 px-6">
+      <div className="shrink-0 flex flex-col items-center gap-3 sm:gap-4 pb-8 sm:pb-14 pt-4 px-4 sm:px-6 safe-bottom">
 
         {/* Incoming: accept + reject */}
         {status === 'incoming' && (
-          <div className="flex items-center justify-center gap-20">
+          <div className="flex items-center justify-center gap-12 sm:gap-20">
             <div className="flex flex-col items-center gap-2">
               <button id="reject_call_btn" onClick={onReject}
                 className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center shadow-xl active:scale-95 transition-all cursor-pointer border border-red-400/20">

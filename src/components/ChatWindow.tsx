@@ -86,8 +86,8 @@ function E2EEMediaAttachment({
   const isAudio = fileType.startsWith('audio/') || fileName.endsWith('.webm');
 
   if (blobUrl) {
-    if (isImage) return <div className="mt-1 rounded-xl overflow-hidden max-w-xs border border-white/10"><img src={blobUrl} className="max-h-64 w-auto object-cover rounded-xl" alt={fileName} /></div>;
-    if (isVideo) return <div className="mt-1 rounded-xl overflow-hidden max-w-xs bg-black border border-white/10"><video src={blobUrl} controls className="max-h-64 w-full" /></div>;
+    if (isImage) return <div className="mt-1 rounded-xl overflow-hidden max-w-full sm:max-w-xs border border-white/10"><img src={blobUrl} className="max-h-48 sm:max-h-64 w-auto max-w-full object-cover rounded-xl" alt={fileName} /></div>;
+    if (isVideo) return <div className="mt-1 rounded-xl overflow-hidden max-w-full sm:max-w-xs bg-black border border-white/10"><video src={blobUrl} controls className="max-h-48 sm:max-h-64 w-full" playsInline /></div>;
     if (isAudio) return <div className="mt-1 p-2 bg-[#1a2730] border border-white/10 rounded-xl flex items-center gap-2 max-w-xs"><Volume2 className="w-4 h-4 text-emerald-400 shrink-0" /><audio src={blobUrl} controls className="w-full h-8" /></div>;
   }
 
@@ -160,6 +160,16 @@ export default function ChatWindow({
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null); // msgId
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: coarse)');
+    const sync = (matches: boolean) => setIsCoarsePointer(matches);
+    sync(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => sync(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
@@ -288,24 +298,24 @@ export default function ChatWindow({
       )}
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-[#202C33] z-30 select-none">
-        <div className="flex items-center gap-3">
+      <div className="px-2 sm:px-3 py-2 sm:py-2.5 border-b border-white/5 flex items-center justify-between bg-[#202C33] z-30 select-none safe-top gap-2">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
           {onBackToSidebar && (
-            <button onClick={onBackToSidebar} className="p-1.5 hover:bg-[#2A3942] text-slate-400 rounded-lg cursor-pointer">
+            <button onClick={onBackToSidebar} className="p-2 hover:bg-[#2A3942] text-slate-400 rounded-lg cursor-pointer shrink-0 -ml-1 touch-target">
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
           <div className="relative shrink-0">
             <img
               src={recipient.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-9 h-9 rounded-full object-cover"
               alt={recipient.username} referrerPolicy="no-referrer"
             />
-            {recipient.isOnline && <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#202C33]" />}
+            {recipient.isOnline && <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#202C33]" />}
           </div>
-          <div>
-            <h3 className="text-slate-100 font-semibold text-sm leading-none">{recipient.username}</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+          <div className="min-w-0">
+            <h3 className="text-slate-100 font-semibold text-sm leading-none truncate">{recipient.username}</h3>
+            <p className="text-[11px] text-slate-500 mt-0.5 truncate">
               {isRecipientTyping
                 ? <span className="text-emerald-400 font-medium">typing...</span>
                 : recipient.isOnline ? 'online' : (recipient.lastSeen ? `last seen ${new Date(recipient.lastSeen).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'offline')}
@@ -313,13 +323,13 @@ export default function ChatWindow({
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0 shrink-0">
           {onStartCall && (
             <>
-              <button onClick={() => onStartCall('audio')} className="p-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-[#2A3942] transition-colors cursor-pointer" title="Voice Call">
+              <button onClick={() => onStartCall('audio')} className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-[#2A3942] transition-colors cursor-pointer touch-target" title="Voice Call">
                 <Phone className="w-5 h-5" />
               </button>
-              <button onClick={() => onStartCall('video')} className="p-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-[#2A3942] transition-colors cursor-pointer" title="Video Call">
+              <button onClick={() => onStartCall('video')} className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-[#2A3942] transition-colors cursor-pointer touch-target" title="Video Call">
                 <VideoIcon className="w-5 h-5" />
               </button>
             </>
@@ -327,7 +337,7 @@ export default function ChatWindow({
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => { setShowDisappearingMenu(p => !p); setShowEmojiPicker(false); }}
-              className={`p-2 rounded-xl transition-colors cursor-pointer ${disappearingDuration > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-[#2A3942]'}`}
+              className={`p-2 sm:p-2.5 rounded-xl transition-colors cursor-pointer touch-target ${disappearingDuration > 0 ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-[#2A3942]'}`}
               title="Disappearing messages"
             >
               <Clock className="w-5 h-5" />
@@ -348,14 +358,14 @@ export default function ChatWindow({
               )}
             </AnimatePresence>
           </div>
-          <button onClick={onOpenSafetyNumber} className="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-[#2A3942] transition-colors cursor-pointer" title="Verify">
+          <button onClick={onOpenSafetyNumber} className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-[#2A3942] transition-colors cursor-pointer touch-target" title="Verify">
             <ShieldCheck className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {/* ── Messages feed ──────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 space-y-1 min-h-0">
         {/* E2EE notice */}
         <div className="flex justify-center mb-4">
           <div className="bg-[#182229]/80 border border-emerald-500/20 rounded-xl px-4 py-2 text-center max-w-xs">
@@ -380,8 +390,13 @@ export default function ChatWindow({
             <div
               key={msg.id}
               className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group relative`}
-              onMouseEnter={() => setHoveredMsgId(msg.id)}
-              onMouseLeave={() => { setHoveredMsgId(null); }}
+              onMouseEnter={() => !isCoarsePointer && setHoveredMsgId(msg.id)}
+              onMouseLeave={() => !isCoarsePointer && setHoveredMsgId(null)}
+              onClick={() => {
+                if (isCoarsePointer) {
+                  setHoveredMsgId(prev => prev === msg.id ? null : msg.id);
+                }
+              }}
             >
               {/* Avatar for received messages */}
               {!isOwn && (
@@ -392,8 +407,8 @@ export default function ChatWindow({
                 />
               )}
 
-              <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[78%] md:max-w-[65%]`}>
-                {/* Hover action bar */}
+              <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[88%] sm:max-w-[78%] md:max-w-[65%]`}>
+                {/* Hover / tap action bar */}
                 <AnimatePresence>
                   {hoveredMsgId === msg.id && (
                     <motion.div
@@ -562,7 +577,7 @@ export default function ChatWindow({
         {showEmojiPicker && (
           <motion.div
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }}
-            className="absolute bottom-20 left-4 bg-[#233138] border border-white/10 rounded-2xl shadow-2xl p-3 z-40"
+            className="absolute bottom-20 left-3 right-3 sm:left-4 sm:right-auto bg-[#233138] border border-white/10 rounded-2xl shadow-2xl p-3 z-40 max-w-full sm:max-w-xs"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="grid grid-cols-5 gap-1.5">
@@ -578,27 +593,27 @@ export default function ChatWindow({
       </AnimatePresence>
 
       {/* ── Input footer ───────────────────────────────────────────────────── */}
-      <div className="px-3 py-3 border-t border-white/5 bg-[#202C33] z-30">
+      <div className="px-2 sm:px-3 py-2 sm:py-3 border-t border-white/5 bg-[#202C33] z-30 safe-bottom">
         {isRecording ? (
-          <div className="flex items-center justify-between p-2.5 bg-red-500/10 border border-red-500/20 rounded-2xl">
-            <div className="flex items-center gap-3 px-2">
-              <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-xs text-red-400 font-bold">Recording</span>
+          <div className="flex items-center justify-between p-2 sm:p-2.5 bg-red-500/10 border border-red-500/20 rounded-2xl gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 px-1 sm:px-2 min-w-0">
+              <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shrink-0" />
+              <span className="text-xs text-red-400 font-bold shrink-0">Recording</span>
               <span className="text-sm font-mono text-slate-100">{fmt(recordDuration)}</span>
             </div>
-            <button onClick={stopVoiceRecording} className="px-4 py-2.5 bg-red-500 hover:bg-red-400 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+            <button onClick={stopVoiceRecording} className="px-3 sm:px-4 py-2.5 bg-red-500 hover:bg-red-400 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 touch-target">
               <Square className="w-3.5 h-3.5 fill-white" /> Send
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSendText} className="flex items-center gap-2">
+          <form onSubmit={handleSendText} className="flex items-center gap-1.5 sm:gap-2">
             <button type="button" onClick={(e) => { e.stopPropagation(); setShowEmojiPicker(p => !p); setShowDisappearingMenu(false); }}
-              className="p-2.5 bg-[#2A3942] text-slate-400 hover:text-yellow-400 rounded-xl transition-all cursor-pointer shrink-0">
+              className="p-2 sm:p-2.5 bg-[#2A3942] text-slate-400 hover:text-yellow-400 rounded-xl transition-all cursor-pointer shrink-0 touch-target">
               <Smile className="w-5 h-5" />
             </button>
 
             <button type="button" onClick={() => fileInputRef.current?.click()}
-              className="p-2.5 bg-[#2A3942] text-slate-400 hover:text-emerald-400 rounded-xl transition-all cursor-pointer shrink-0">
+              className="p-2 sm:p-2.5 bg-[#2A3942] text-slate-400 hover:text-emerald-400 rounded-xl transition-all cursor-pointer shrink-0 touch-target">
               <Paperclip className="w-5 h-5" />
               <input ref={fileInputRef} type="file" className="hidden" onChange={handleFileSelectorChange} />
             </button>
@@ -611,17 +626,17 @@ export default function ChatWindow({
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { handleSendText(e as any); } }}
               placeholder={sharedKey ? "Type a message..." : "Connecting..."}
               disabled={!sharedKey}
-              className="flex-1 bg-[#2A3942] text-sm text-slate-100 rounded-2xl py-3 px-4 outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50 transition-colors disabled:opacity-40"
+              className="flex-1 min-w-0 bg-[#2A3942] text-sm text-slate-100 rounded-2xl py-2.5 sm:py-3 px-3 sm:px-4 outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50 transition-colors disabled:opacity-40"
             />
 
             {textInput.trim() ? (
               <button type="submit" disabled={!sharedKey}
-                className="p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl transition-all hover:scale-105 cursor-pointer shrink-0 disabled:opacity-40 shadow-lg">
-                <Send className="w-4.5 h-4.5" />
+                className="p-2.5 sm:p-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl transition-all hover:scale-105 cursor-pointer shrink-0 disabled:opacity-40 shadow-lg touch-target">
+                <Send className="w-5 h-5" />
               </button>
             ) : (
               <button type="button" onClick={startVoiceRecording} disabled={!sharedKey}
-                className="p-2.5 bg-[#2A3942] text-slate-400 hover:text-emerald-400 rounded-xl transition-all cursor-pointer shrink-0 disabled:opacity-40">
+                className="p-2 sm:p-2.5 bg-[#2A3942] text-slate-400 hover:text-emerald-400 rounded-xl transition-all cursor-pointer shrink-0 disabled:opacity-40 touch-target">
                 <Mic className="w-5 h-5" />
               </button>
             )}

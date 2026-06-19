@@ -76,12 +76,12 @@ export default function ProfileModal({ isOpen, onClose, currentUser, onProfileUp
   return (
     <AnimatePresence>
       {isOpen && (
-        <div id="profile_modal_overlay" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div id="profile_modal_overlay" className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 safe-x">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-md bg-[#111B21] border border-white/5 rounded-2xl shadow-2xl p-6 relative"
+            className="w-full max-w-md bg-[#111B21] border border-white/5 rounded-t-2xl sm:rounded-2xl shadow-2xl p-5 sm:p-6 relative max-h-[90dvh] overflow-y-auto safe-bottom"
           >
             {/* Close Button */}
             <button

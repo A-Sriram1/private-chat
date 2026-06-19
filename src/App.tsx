@@ -48,6 +48,19 @@ export default function App() {
 
   // Mobile layout state helper
   const [showMobileSidebar, setShowMobileSidebar] = useState(true);
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const syncLayout = (matches: boolean) => {
+      setIsMobileLayout(matches);
+      if (!matches) setShowMobileSidebar(true);
+    };
+    syncLayout(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => syncLayout(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // --- WebRTC Secure Call States ---
   const [callState, setCallState] = useState<'idle' | 'dialing' | 'incoming' | 'active' | 'ended'>('idle');
@@ -1008,7 +1021,7 @@ export default function App() {
   }, [activeSession, privateKey]);
 
   return (
-    <div id="app_root" className="min-h-screen bg-[#0B0E11] flex text-slate-100 font-sans overflow-hidden">
+    <div id="app_root" className="bg-[#0B0E11] flex text-slate-100 font-sans overflow-hidden w-full h-dvh min-h-dvh safe-x">
       <AnimatePresence mode="wait">
         {!currentUser ? (
           // Secure Login panel
@@ -1028,10 +1041,10 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex w-full h-screen overflow-hidden"
+            className="flex w-full h-full min-h-0 overflow-hidden"
           >
-            {/* Split layout sidebars */}
-            <div className={`h-full ${showMobileSidebar ? 'flex w-full md:w-auto shrink-0 z-20' : 'hidden md:flex shrink-0'}`}>
+            {/* Sidebar — full width on mobile, fixed width on desktop */}
+            <div className={`h-full flex-shrink-0 min-h-0 ${showMobileSidebar ? 'flex w-full md:w-80 lg:w-96 z-20' : 'hidden md:flex md:w-80 lg:w-96'}`}>
               <ContactSidebar
                 currentUser={currentUser}
                 sessions={sessions}
@@ -1044,8 +1057,8 @@ export default function App() {
               />
             </div>
 
-            {/* Chat Frame workspace */}
-            <div className={`h-full flex-1 ${!showMobileSidebar ? 'flex w-full z-10' : 'hidden md:flex'}`}>
+            {/* Chat panel — hidden on mobile when sidebar showing */}
+            <div className={`h-full flex-1 min-w-0 min-h-0 ${!showMobileSidebar || !isMobileLayout ? 'flex w-full' : 'hidden'}`}>
               {activeSession ? (
                 <ChatWindow
                   currentUser={currentUser}
@@ -1062,20 +1075,20 @@ export default function App() {
                   onReactToMessage={handleReactToMessage}
                   onSendTypingSignal={handleSendTypingSignal}
                   onOpenSafetyNumber={() => setIsSafetyOpen(true)}
-                  onBackToSidebar={() => setShowMobileSidebar(true)}
+                  onBackToSidebar={isMobileLayout ? () => setShowMobileSidebar(true) : undefined}
                   onStartCall={(type) => initiateCall(activeSession.recipient, type)}
                 />
               ) : (
                 // Chat Default Welcome Canvas
-                <div id="welcome_blank_canvas" className="flex-1 flex flex-col items-center justify-center bg-[#0B0E11] relative overflow-hidden select-none px-6">
+                <div id="welcome_blank_canvas" className="flex-1 flex flex-col items-center justify-center bg-[#0B0E11] relative overflow-hidden overflow-y-auto select-none px-4 sm:px-6 py-6 min-h-0">
                   {/* Backdrop elements */}
                   <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
                   
-                  <div className="flex flex-col items-center max-w-sm text-center">
-                    <div className="p-4 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl mb-4 shadow-xl">
-                      <MessageSquareLock className="w-10 h-10 animate-pulse" />
+                  <div className="flex flex-col items-center max-w-sm text-center w-full">
+                    <div className="p-3 sm:p-4 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-2xl mb-4 shadow-xl">
+                      <MessageSquareLock className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-100 tracking-tight">E2EE Chat keyspace online</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-100 tracking-tight">E2EE Chat keyspace online</h2>
                     <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                       Select a contact from the side menu or discover new certified public key links on the directory network to begin a private end-to-end encrypted session.
                     </p>

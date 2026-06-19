@@ -124,7 +124,7 @@ export default function LoginRegister({ onAuthSuccess }: LoginRegisterProps) {
   };
 
   return (
-    <div id="auth_container" className="min-h-screen bg-[#0B0E11] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div id="auth_container" className="h-dvh min-h-dvh w-full bg-[#0B0E11] flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden overflow-y-auto font-sans safe-x safe-bottom">
       {/* Background ambient mesh */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -133,13 +133,13 @@ export default function LoginRegister({ onAuthSuccess }: LoginRegisterProps) {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md bg-[#111B21] border border-white/5 rounded-2xl shadow-2xl p-8 relative z-10"
+        className="w-full max-w-md bg-[#111B21] border border-white/5 rounded-2xl shadow-2xl p-5 sm:p-8 relative z-10 my-4"
       >
         <div className="flex flex-col items-center mb-8">
           <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-2xl mb-4">
             <Shield className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight flex items-center gap-2 flex-wrap justify-center">
             Private Chat <span className="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold px-2 py-0.5 rounded-full">E2EE</span>
           </h1>
           <p className="text-sm text-slate-400 mt-2 text-center">
@@ -213,7 +213,7 @@ export default function LoginRegister({ onAuthSuccess }: LoginRegisterProps) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Choose Profile Picture</label>
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 overflow-x-auto pb-1 -mx-1 px-1">
                   {AVATARS.map((avUrl) => (
                     <button
                       key={avUrl}

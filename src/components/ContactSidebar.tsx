@@ -48,14 +48,14 @@ export default function ContactSidebar({
   );
 
   return (
-    <div id="contact_sidebar" className="w-80 md:w-96 border-r border-white/5 bg-[#111B21] flex flex-col h-full font-sans select-none shrink-0">
+    <div id="contact_sidebar" className="w-full border-r border-white/5 bg-[#111B21] flex flex-col h-full min-h-0 font-sans select-none">
       {/* Top Header - User profile */}
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#202C33]">
-        <div className="flex items-center gap-3">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-white/5 flex items-center justify-between bg-[#202C33] safe-top gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <button 
             type="button" 
             onClick={onOpenProfile} 
-            className="relative w-10 h-10 rounded-full overflow-hidden border border-indigo-500/30 group cursor-pointer"
+            className="relative w-11 h-11 rounded-full overflow-hidden border border-indigo-500/30 group cursor-pointer shrink-0"
           >
             <img 
                src={currentUser.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} 
@@ -64,36 +64,36 @@ export default function ContactSidebar({
               referrerPolicy="no-referrer"
             />
           </button>
-          <div>
-            <h3 className="text-slate-100 font-semibold text-sm leading-none flex items-center gap-1.5">
+          <div className="min-w-0">
+            <h3 className="text-slate-100 font-semibold text-sm leading-none flex items-center gap-1.5 truncate">
               {currentUser.username}
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
             </h3>
-            <p className="text-xs text-slate-500 mt-1 truncate max-w-[130px] md:max-w-[180px]">
+            <p className="text-xs text-slate-500 mt-1 truncate max-w-[120px] sm:max-w-[160px]">
               {currentUser.statusMessage || "🔒 E2EE Active"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0 shrink-0">
           <button
             onClick={() => setShowAddContact(!showAddContact)}
             title="Start New Chat"
-            className={`p-2 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-[#2A3942] transition-colors cursor-pointer ${showAddContact ? 'bg-[#2A3942] text-indigo-400' : ''}`}
+            className={`p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-[#2A3942] transition-colors cursor-pointer touch-target ${showAddContact ? 'bg-[#2A3942] text-indigo-400' : ''}`}
           >
             <UserPlus className="w-5 h-5" />
           </button>
           <button
             onClick={onOpenProfile}
             title="Profile Settings"
-            className="p-2 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-[#202C33] transition-colors cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-indigo-400 hover:bg-[#202C33] transition-colors cursor-pointer touch-target"
           >
             <Settings2 className="w-5 h-5" />
           </button>
           <button
             onClick={onLogout}
             title="Secure Logout"
-            className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-[#202C33] transition-colors cursor-pointer"
+            className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-red-400 hover:bg-[#202C33] transition-colors cursor-pointer touch-target"
           >
             <LogOut className="w-5 h-5" />
           </button>
@@ -152,7 +152,7 @@ export default function ContactSidebar({
       )}
 
       {/* Search Input Box */}
-      <div className="p-3 bg-[#111B21]">
+      <div className="p-2.5 sm:p-3 bg-[#111B21]">
         <div className="relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
           <input
@@ -167,7 +167,7 @@ export default function ContactSidebar({
       </div>
 
       {/* Sessions lists */}
-      <div className="flex-1 overflow-y-auto space-y-1 bg-[#111B21]">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden space-y-1 bg-[#111B21] min-h-0">
         <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-widest px-3 py-2">
           Secure Conversations ({filteredSessions.length})
         </h4>
@@ -186,7 +186,7 @@ export default function ContactSidebar({
               <button
                 key={session.recipient.username}
                 onClick={() => onSelectSession(session)}
-                className={`w-full flex items-center gap-3 p-4 text-left transition-all relative group cursor-pointer rounded-none border-b border-white/5 ${
+                className={`w-full flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 text-left transition-all relative group cursor-pointer rounded-none border-b border-white/5 ${
                   isActive 
                     ? 'bg-[#2A3942] text-slate-100 border-l-4 border-indigo-505 border-l-indigo-505 border-l-indigo-500' 
                     : 'hover:bg-[#202C33] text-slate-450 text-gray-400 hover:text-slate-200'
@@ -196,7 +196,7 @@ export default function ContactSidebar({
                 <div className="relative shrink-0">
                   <img
                     src={session.recipient.profilePic || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'}
-                    className="w-12 h-12 rounded-full object-cover border border-slate-800"
+                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border border-slate-800"
                     alt={session.recipient.username}
                     referrerPolicy="no-referrer"
                   />
@@ -224,7 +224,7 @@ export default function ContactSidebar({
                         typing secure message...
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-400 truncate max-w-[140px] md:max-w-[200px]">
+                      <p className="text-xs text-gray-400 truncate max-w-[140px] sm:max-w-[180px]">
                         {session.latestMessage?.fileId ? (
                           <span className="italic">📁 Attachment sent (E2EE)</span>
                         ) : session.latestMessage ? (
